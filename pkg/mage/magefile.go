@@ -1,6 +1,3 @@
-//go:build mage
-// +build mage
-
 package mage
 
 import (
