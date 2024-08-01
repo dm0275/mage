@@ -1,4 +1,4 @@
-package mage
+package mg
 
 import (
 	"fmt"
