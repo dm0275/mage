@@ -1,4 +1,4 @@
-package mg
+package magefile
 
 import (
 	"fmt"
