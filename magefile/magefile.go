@@ -3,6 +3,7 @@ package magefile
 import (
 	"fmt"
 	"github.com/dm0275/mage/utils"
+	l "log"
 	"os"
 )
 
@@ -10,6 +11,9 @@ const (
 	Perm0664 = 0o664
 	Perm0755 = 0o755
 )
+
+var debugEnabled = false
+var logger = l.New(os.Stdout, "", 0)
 
 var Config = &ProjectConfig{
 	ProjectName: "",
@@ -30,10 +34,21 @@ type ProjectConfig struct {
 	ArchTypes    []string
 }
 
+func configureDebugSettings() {
+	if os.Getenv("MAGEFILE_DEBUG") == "1" || os.Getenv("MAGEFILE_VERBOSE") == "1" {
+		debugEnabled = true
+	}
+}
+
+func init() {
+	// Configure debug settings
+	configureDebugSettings()
+}
+
 // A build step that requires additional params, or platform specific steps for example
 func Build() error {
 	if Config.ProjectName == "" {
-		return fmt.Errorf("no ProjectName defined")
+		logger.Fatalf("no ProjectName defined")
 	}
 
 	goCmd := "go"
@@ -60,15 +75,16 @@ func Build() error {
 	// Run the build command
 	for _, osType := range Config.OsTypes {
 		for _, archType := range Config.ArchTypes {
-
-			fmt.Println(fmt.Sprintf("Building %s-%s-%s ...", Config.ProjectName, osType, archType))
+			logger.Printf("Building %s-%s-%s...", Config.ProjectName, osType, archType)
 
 			buildOsCmd := append(buildCmd, "-o",
 				fmt.Sprintf("%s/%s-%s-%s", Config.OutputDir, Config.ProjectName, osType, archType),
 				".",
 			)
 
-			fmt.Println(buildOsCmd)
+			if debugEnabled {
+				logger.Printf("Executing binary [%s] with args: %s", goCmd, buildOsCmd)
+			}
 			output, err = utils.ExecCmd(utils.ExecConfig{
 				Environment: []string{
 					fmt.Sprintf("GOOS=%s", osType),
@@ -83,7 +99,10 @@ func Build() error {
 				return err
 			}
 
-			fmt.Println(output)
+			if debugEnabled {
+				logger.Printf("Build Output: %s", output)
+			}
+
 			fmt.Println("Done")
 		}
 	}
@@ -92,11 +111,7 @@ func Build() error {
 }
 
 func Test() error {
-	fmt.Println(Config.OutputDir)
-	fmt.Println(Config.CgoEnabled)
-	fmt.Println(Config.LdFlags)
-	fmt.Println(Config.OsTypes)
-	fmt.Println(Config.ArchTypes)
+	// TODO: add test task
 	return nil
 }
 
