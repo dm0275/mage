@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/dm0275/mage/utils"
 	"os"
-	"runtime/debug"
 )
 
 const (
@@ -34,15 +33,7 @@ type ProjectConfig struct {
 // A build step that requires additional params, or platform specific steps for example
 func Build() error {
 	if Config.ProjectName == "" {
-		buildInfo, ok := debug.ReadBuildInfo()
-		if !ok {
-			return fmt.Errorf("Failed to read build info")
-		}
-
-		Config.ProjectName = buildInfo.Main.Path
-		fmt.Println(buildInfo.Main)
-		fmt.Println(buildInfo.Main.Path)
-		fmt.Println(Config.ProjectName)
+		return fmt.Errorf("no ProjectName defined")
 	}
 
 	goCmd := "go"
@@ -55,7 +46,7 @@ func Build() error {
 	}
 
 	if ldFlags != "" {
-		buildCmd = append(buildCmd, fmt.Sprintf("-ldflags='%s'", ldFlags))
+		buildCmd = append(buildCmd, fmt.Sprintf("-ldflags=%s", ldFlags))
 	}
 
 	// Set output dir
@@ -70,11 +61,14 @@ func Build() error {
 	for _, osType := range Config.OsTypes {
 		for _, archType := range Config.ArchTypes {
 
+			fmt.Println(fmt.Sprintf("Building %s-%s-%s ...", Config.ProjectName, osType, archType))
+
 			buildOsCmd := append(buildCmd, "-o",
 				fmt.Sprintf("%s/%s-%s-%s", Config.OutputDir, Config.ProjectName, osType, archType),
 				".",
 			)
 
+			fmt.Println(buildOsCmd)
 			output, err = utils.ExecCmd(utils.ExecConfig{
 				Environment: []string{
 					fmt.Sprintf("GOOS=%s", osType),
@@ -88,11 +82,11 @@ func Build() error {
 			if err != nil {
 				return err
 			}
+
+			fmt.Println(output)
+			fmt.Println("Done")
 		}
 	}
-
-	// Print Output
-	fmt.Println(output)
 
 	return err
 }
@@ -106,8 +100,8 @@ func Test() error {
 	return nil
 }
 
-// Clean up after yourself
+// Clean up
 func Clean() {
 	fmt.Println("Cleaning...")
-	os.RemoveAll("MyApp")
+	os.RemoveAll(Config.OutputDir)
 }
