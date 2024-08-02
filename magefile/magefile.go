@@ -22,12 +22,13 @@ var Config = &ProjectConfig{
 }
 
 type ProjectConfig struct {
-	ProjectName string
-	OutputDir   string
-	CgoEnabled  bool
-	LdFlags     map[string]string
-	OsTypes     []string
-	ArchTypes   []string
+	ProjectName  string
+	OutputBinary string
+	OutputDir    string
+	CgoEnabled   bool
+	LdFlags      map[string]string
+	OsTypes      []string
+	ArchTypes    []string
 }
 
 // A build step that requires additional params, or platform specific steps for example
@@ -39,6 +40,9 @@ func Build() error {
 		}
 
 		Config.ProjectName = buildInfo.Main.Path
+		fmt.Println(buildInfo.Main)
+		fmt.Println(buildInfo.Main.Path)
+		fmt.Println(Config.ProjectName)
 	}
 
 	goCmd := "go"
@@ -60,16 +64,32 @@ func Build() error {
 		return fmt.Errorf("unable to create output directory %s. ERROR: %s", Config.OutputDir, err)
 	}
 
-	buildCmd = append(buildCmd, "-o",
-		fmt.Sprintf("%s/%s", Config.OutputDir, Config.ProjectName),
-		".",
-	)
+	var output string
 
 	// Run the build command
-	output, err := utils.ExecCmd(utils.ExecConfig{
-		Command: goCmd,
-		Args:    buildCmd,
-	})
+	for _, osType := range Config.OsTypes {
+		for _, archType := range Config.ArchTypes {
+
+			buildOsCmd := append(buildCmd, "-o",
+				fmt.Sprintf("%s/%s-%s-%s", Config.OutputDir, Config.ProjectName, osType, archType),
+				".",
+			)
+
+			output, err = utils.ExecCmd(utils.ExecConfig{
+				Environment: []string{
+					fmt.Sprintf("GOOS=%s", osType),
+					fmt.Sprintf("GOARCH=%s", archType),
+					fmt.Sprintf("CGO_ENABLED=%s", Config.CgoEnabled),
+				},
+				Command: goCmd,
+				Args:    buildOsCmd,
+			})
+
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	// Print Output
 	fmt.Println(output)
