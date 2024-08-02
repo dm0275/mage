@@ -2,13 +2,14 @@ package magefile
 
 import (
 	"fmt"
+	"github.com/dm0275/mage/utils"
 	"os"
 	"os/exec"
 
 	"github.com/magefile/mage/mg" // mg contains helpful utility functions, like Deps
 )
 
-var Config *ProjectConfig = &ProjectConfig{
+var Config = &ProjectConfig{
 	OutputDir:  "bin",
 	CgoEnabled: false,
 	LdFlags:    map[string]string{},
@@ -26,10 +27,26 @@ type ProjectConfig struct {
 
 // A build step that requires additional params, or platform specific steps for example
 func Build() error {
-	mg.Deps(InstallDeps)
-	fmt.Println("Building...")
-	cmd := exec.Command("go", "build", "-o", "MyApp", ".")
-	return cmd.Run()
+	buildCmd := "go build "
+
+	// Configure LD flags
+	ldFlags := ""
+	for key, value := range Config.LdFlags {
+		ldFlags += fmt.Sprintf("-X %s=%s ", key, value)
+	}
+
+	if ldFlags != "" {
+		buildCmd += fmt.Sprintf("-ldflags='%s'", ldFlags)
+	}
+
+	output, err := utils.ExecCmd(utils.ExecConfig{
+		Command: buildCmd,
+	})
+
+	// Print Output
+	fmt.Println(output)
+
+	return err
 }
 
 func Test() error {
