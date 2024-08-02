@@ -8,13 +8,21 @@ import (
 	"github.com/magefile/mage/mg" // mg contains helpful utility functions, like Deps
 )
 
-var (
-	OutputDir  string            = "bin"
-	CgoEnabled bool              = false
-	LdFlags    map[string]string = make(map[string]string)
-	OsTypes    []string          = []string{}
-	ArchTypes  []string          = []string{}
-)
+var Config *ProjectConfig = &ProjectConfig{
+	OutputDir:  "bin",
+	CgoEnabled: false,
+	LdFlags:    map[string]string{},
+	OsTypes:    []string{"linux"},
+	ArchTypes:  []string{"amd64"},
+}
+
+type ProjectConfig struct {
+	OutputDir  string
+	CgoEnabled bool
+	LdFlags    map[string]string
+	OsTypes    []string
+	ArchTypes  []string
+}
 
 // A build step that requires additional params, or platform specific steps for example
 func Build() error {
@@ -22,6 +30,15 @@ func Build() error {
 	fmt.Println("Building...")
 	cmd := exec.Command("go", "build", "-o", "MyApp", ".")
 	return cmd.Run()
+}
+
+func Test() error {
+	fmt.Println(Config.OutputDir)
+	fmt.Println(Config.CgoEnabled)
+	fmt.Println(Config.LdFlags)
+	fmt.Println(Config.OsTypes)
+	fmt.Println(Config.ArchTypes)
+	return nil
 }
 
 // A custom install step if you need your bin someplace other than go/bin
