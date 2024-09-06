@@ -15,10 +15,7 @@ type ArgoCdConfig struct {
 }
 
 var (
-	argocdHost    = "localhost"
-	gitOpsRepo    = "https://github.com/dm0275/argo-gitops.git"
-	gitOpsRepoSsh = "git@github.com:dm0275/argo-gitops.git"
-	ArgoCDConfig  = ArgoCdConfig{
+	ArgoCDConfig = ArgoCdConfig{
 		Namespace:       "argocd",
 		Version:         "v2.11.3", // use `stable` for the latest version
 		SSHKeyPath:      "~/.ssh/id_rsa",
@@ -147,32 +144,6 @@ func (a ArgoCD) AddGithubSSHCreds() error {
 func (a ArgoCD) AddHTTPRepo(repoURL, argoURL string) error {
 	// Add new repo
 	output, err := run(fmt.Sprintf("argocd repo add %s --server %s", repoURL, argoURL))
-	if err != nil {
-		return fmt.Errorf("unable add repository. ERROR: %s", err)
-	}
-
-	fmt.Println(output)
-
-	return nil
-}
-
-// AddHTTPRepoFromVars Add HTTP repository to Argo
-func (a ArgoCD) AddHTTPRepoFromVars() error {
-	// Add new repo
-	output, err := run(fmt.Sprintf("argocd repo add %s --server %s", gitOpsRepo, argocdHost))
-	if err != nil {
-		return fmt.Errorf("unable add repository. ERROR: %s", err)
-	}
-
-	fmt.Println(output)
-
-	return nil
-}
-
-// AddRepoSSHFromVars Add SSH repository to Argo
-func (a ArgoCD) AddRepoSSHFromVars() error {
-	// Add new repo
-	output, err := run(fmt.Sprintf("argocd repo add %s --ssh-private-key-path %s --server %s", gitOpsRepoSsh, ArgoCDConfig.SSHKeyPath, argocdHost))
 	if err != nil {
 		return fmt.Errorf("unable add repository. ERROR: %s", err)
 	}

@@ -14,9 +14,7 @@ type ArgoWorkflowsConfig struct {
 }
 
 var (
-	workflowsRepo    = "https://github.com/dm0275/argo-gitops.git"
-	workflowsRepoSsh = "git@github.com:dm0275/argo-gitops.git"
-	ArgoWFConfig     = ArgoWorkflowsConfig{
+	ArgoWFConfig = ArgoWorkflowsConfig{
 		Namespace:       "argo",
 		Version:         "v3.5.10", // use `stable` for the latest version
 		PortForwardPort: "2746",
