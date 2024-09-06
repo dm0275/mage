@@ -70,7 +70,7 @@ func (a ArgoCD) GetAdminPassword() error {
 // Login Login to argo via the cli (requires the argocd service to be accessible)
 func (a ArgoCD) Login() error {
 	// Fetching admin password
-	adminPass, err := run("argocd admin initial-password -n argocd | head -n 1")
+	adminPass, err := run(fmt.Sprintf("argocd admin initial-password -n %s | head -n 1", ArgoCDConfig.Namespace))
 	if err != nil {
 		return fmt.Errorf("unable fetch admin credentials. ERROR: %s", err)
 	}
@@ -88,10 +88,20 @@ func (a ArgoCD) Login() error {
 
 // AddHostSSHCert Add host ssh cert - Expected args: (hostname)
 func (a ArgoCD) AddHostSSHCert(hostname string) error {
+	// Default port
+	defaultPort := "22"
+
+	return a.AddHostSSHCertWithPort(hostname, defaultPort)
+}
+
+// AddHostSSHCert Add host ssh cert - Expected args: (hostname)
+func (a ArgoCD) AddHostSSHCertWithPort(hostname, port string) error {
+	mg.Deps(a.Login)
+
 	// Add github ssh cert
-	output, err := run(fmt.Sprintf("ssh-keyscan %s | argocd cert add-ssh --batch", hostname))
+	output, err := run(fmt.Sprintf("ssh-keyscan -p %s %s | argocd cert add-ssh --batch", port, hostname))
 	if err != nil {
-		return fmt.Errorf("unable add github ssh cert. ERROR: %s", err)
+		return fmt.Errorf("unable add %s ssh cert. ERROR: %s", hostname, err)
 	}
 
 	fmt.Println(output)
@@ -104,18 +114,13 @@ func (a ArgoCD) AddGithubSSHCert() error {
 	mg.Deps(a.Login)
 
 	// Add github ssh cert
-	output, err := run("ssh-keyscan github.com | argocd cert add-ssh --batch")
-	if err != nil {
-		return fmt.Errorf("unable add github ssh cert. ERROR: %s", err)
-	}
-
-	fmt.Println(output)
-
-	return nil
+	return a.AddHostSSHCert("github.com")
 }
 
 // AddRepoSSHCreds Add Argo repo credentials - Expected args: (repoURL sshKeyPath)
 func (a ArgoCD) AddRepoSSHCreds(repoURL, sshKeyPath string) error {
+	mg.Deps(a.Login)
+
 	// Add repocreds
 	output, err := run(fmt.Sprintf("argocd repocreds add %s --ssh-private-key-path %s", repoURL, sshKeyPath))
 	if err != nil {
@@ -129,15 +134,10 @@ func (a ArgoCD) AddRepoSSHCreds(repoURL, sshKeyPath string) error {
 
 // AddGithubSSHCreds Add Argo repo credentials
 func (a ArgoCD) AddGithubSSHCreds() error {
+	githubSSHUrl := "git@github.com"
+
 	// Add repocreds
-	output, err := run(fmt.Sprintf("argocd repocreds add git@github.com --ssh-private-key-path %s", ArgoCDConfig.SSHKeyPath))
-	if err != nil {
-		return fmt.Errorf("unable add repocreds. ERROR: %s", err)
-	}
-
-	fmt.Println(output)
-
-	return nil
+	return a.AddRepoSSHCreds(githubSSHUrl, ArgoCDConfig.SSHKeyPath)
 }
 
 // AddHTTPRepo Add HTTP repository to Argo - Expected args: (repoURL argoURL)
