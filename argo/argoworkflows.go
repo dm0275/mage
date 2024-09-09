@@ -42,9 +42,8 @@ func (ArgoWorkflows) Install() error {
 
 // ArgoServer Start the Argo Server
 func (ArgoWorkflows) ArgoServer() error {
-	fmt.Println(fmt.Sprintf("Argo can be accessed at:\nhttps://localhost:%s", ArgoWFConfig.PortForwardPort))
 	// Port forward the argo-server
-	_, err := run("argo server --auth-mode=server")
+	_, err := run(fmt.Sprintf("argo server --namespace %s --auth-mode=server", ArgoWFConfig.Namespace))
 	if err != nil {
 		return fmt.Errorf("unable to start the argo-server. ERROR: %s", err)
 	}

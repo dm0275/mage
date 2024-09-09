@@ -94,7 +94,7 @@ func (a ArgoCD) AddHostSSHCert(hostname string) error {
 	return a.AddHostSSHCertWithPort(hostname, defaultPort)
 }
 
-// AddHostSSHCert Add host ssh cert - Expected args: (hostname)
+// AddHostSSHCertWithPort Add host ssh cert - Expected args: (hostname)
 func (a ArgoCD) AddHostSSHCertWithPort(hostname, port string) error {
 	mg.Deps(a.Login)
 
