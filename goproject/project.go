@@ -12,7 +12,7 @@ const (
 	Perm0755 = 0o755
 )
 
-var debugEnabled = false
+var DebugEnabled = false
 var logger = l.New(os.Stdout, "", 0)
 
 var Config = &ProjectConfig{
@@ -36,7 +36,7 @@ type ProjectConfig struct {
 
 func configureDebugSettings() {
 	if os.Getenv("MAGEFILE_DEBUG") == "1" || os.Getenv("MAGEFILE_VERBOSE") == "1" {
-		debugEnabled = true
+		DebugEnabled = true
 	}
 }
 
@@ -45,7 +45,7 @@ func init() {
 	configureDebugSettings()
 }
 
-// A build step that requires additional params, or platform specific steps for example
+// Build This target is responsible for building the Go project (This target can be customized to configure the arch/os targets, ldflags, outputDir, etc).
 func Build() error {
 	if Config.ProjectName == "" {
 		logger.Fatalf("no ProjectName defined")
@@ -77,12 +77,12 @@ func Build() error {
 		for _, archType := range Config.ArchTypes {
 			logger.Printf("Building %s-%s-%s...", Config.ProjectName, osType, archType)
 
-			buildOsCmd := append(buildCmd, "-o",
+			buildOsCmd := append(buildCmd, "-v", "-o",
 				fmt.Sprintf("%s/%s-%s-%s", Config.OutputDir, Config.ProjectName, osType, archType),
 				".",
 			)
 
-			if debugEnabled {
+			if DebugEnabled {
 				logger.Printf("Executing binary [%s] with args: %s", goCmd, buildOsCmd)
 			}
 			output, err = utils.ExecCmd(utils.ExecConfig{
@@ -99,7 +99,7 @@ func Build() error {
 				return err
 			}
 
-			if debugEnabled {
+			if DebugEnabled {
 				logger.Printf("Build Output: %s", output)
 			}
 
@@ -110,8 +110,25 @@ func Build() error {
 	return err
 }
 
+// Test This target is responsible for running tests for the Go project
 func Test() error {
-	// TODO: add test task
+	goCmd := "go"
+	testCmd := []string{"test", "./..."}
+
+	output, err := utils.ExecCmd(utils.ExecConfig{
+		Environment: []string{
+			fmt.Sprintf("CGO_ENABLED=%s", Config.CgoEnabled),
+		},
+		Command: goCmd,
+		Args:    testCmd,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	logger.Printf("Test Output:\n%s", output)
+
 	return nil
 }
 
