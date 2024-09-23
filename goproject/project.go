@@ -1,4 +1,4 @@
-package magefile
+package goproject
 
 import (
 	"fmt"
