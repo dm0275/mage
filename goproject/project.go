@@ -12,6 +12,7 @@ const (
 	Perm0755 = 0o755
 )
 
+var ForceRebuild = false
 var DebugEnabled = false
 var logger = l.New(os.Stdout, "", 0)
 
@@ -45,7 +46,7 @@ func init() {
 	configureDebugSettings()
 }
 
-// Build This target is responsible for building the Go project (This target can be customized to configure the arch/os targets, ldflags, outputDir, etc).
+// Build Build the Go project (This target can be customized to configure the arch/os targets, ldflags, outputDir, etc).
 func Build() error {
 	if Config.ProjectName == "" {
 		logger.Fatalf("no ProjectName defined")
@@ -53,6 +54,10 @@ func Build() error {
 
 	goCmd := "go"
 	buildCmd := []string{"build", "-v"}
+
+	if ForceRebuild {
+		buildCmd = append(buildCmd, "-a")
+	}
 
 	// Configure LD flags
 	ldFlags := ""
@@ -103,17 +108,19 @@ func Build() error {
 				logger.Printf("Build Output: %s", output)
 			}
 
-			fmt.Println("Done")
+			logger.Println("Done")
 		}
 	}
 
 	return err
 }
 
-// Test This target is responsible for running tests for the Go project
+// Test Run tests for the Go project
 func Test() error {
 	goCmd := "go"
 	testCmd := []string{"test", "./..."}
+
+	logger.Println("Running tests...")
 
 	output, err := utils.ExecCmd(utils.ExecConfig{
 		Environment: []string{
@@ -124,16 +131,18 @@ func Test() error {
 	})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error: %s\n%s", output, err)
 	}
 
 	logger.Printf("Test Output:\n%s", output)
+	logger.Println("Done")
 
 	return nil
 }
 
-// Clean up
+// Clean Clean up the output directory
 func Clean() {
-	fmt.Println("Cleaning...")
+	logger.Println("Cleaning up output dir...")
 	os.RemoveAll(Config.OutputDir)
+	logger.Println("Done")
 }
